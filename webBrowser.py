@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLineEdit, QToolBar, QAct
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import QTabWidget
+from PyQt5.QtWebEngineCore import QWebEngineUrlRequestInterceptor
 
 class Browser(QMainWindow):
     def __init__(self):
@@ -20,6 +21,10 @@ class Browser(QMainWindow):
         # Create toolbar first
         self.create_toolbar()
         
+        from PyQt5.QtWebEngineWidgets import QWebEngineProfile
+
+        adblocker = AdBlocker()
+        QWebEngineProfile.defaultProfile().setRequestInterceptor(adblocker)
         # Then add the first tab
         self.add_new_tab(QUrl("https://www.google.com"), "New Tab")
 
@@ -98,6 +103,18 @@ class Browser(QMainWindow):
     def close_tab(self, i):
         if self.tabs.count() > 1:
             self.tabs.removeTab(i)
+
+
+
+class AdBlocker(QWebEngineUrlRequestInterceptor):
+    def __init__(self):
+        super().__init__()
+        self.blocked_keywords = ["ads.", "doubleclick.net", "adservice.google.com", "googlesyndication", "tracking"]
+
+    def interceptRequest(self, info):
+        url = info.requestUrl().toString()
+        if any(keyword in url for keyword in self.blocked_keywords):
+            info.block(True)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
