@@ -17,17 +17,14 @@ class Browser(QMainWindow):
         self.tabs.currentChanged.connect(self.update_url_on_tab_switch)
         self.setCentralWidget(self.tabs)
 
-        # Create toolbar first
-        self.create_toolbar()
-        
-        # Then add the first tab
         self.add_new_tab(QUrl("https://www.google.com"), "New Tab")
+
+        self.create_toolbar()
 
     def create_toolbar(self):
         toolbar = QToolBar()
         self.addToolBar(toolbar)
 
-        # Navigation actions
         back_action = QAction("Back", self)
         forward_action = QAction("Forward", self)
         reload_action = QAction("Reload", self)
@@ -40,29 +37,27 @@ class Browser(QMainWindow):
         toolbar.addAction(forward_action)
         toolbar.addAction(reload_action)
 
-        # URL bar
         self.url_bar = QLineEdit()
         self.url_bar.returnPressed.connect(self.navigate_to_url)
         toolbar.addWidget(self.url_bar)
 
-        # New tab action
         new_tab_action = QAction("New Tab", self)
         new_tab_action.triggered.connect(lambda: self.add_new_tab())
         toolbar.addAction(new_tab_action)
 
     def navigate_back(self):
         current_browser = self.tabs.currentWidget()
-        if current_browser:
+        if isinstance(current_browser, QWebEngineView):
             current_browser.back()
 
     def navigate_forward(self):
         current_browser = self.tabs.currentWidget()
-        if current_browser:
+        if isinstance(current_browser, QWebEngineView):
             current_browser.forward()
 
     def reload_page(self):
         current_browser = self.tabs.currentWidget()
-        if current_browser:
+        if isinstance(current_browser, QWebEngineView):
             current_browser.reload()
 
     def navigate_to_url(self):
@@ -70,14 +65,14 @@ class Browser(QMainWindow):
         if not url.startswith(("http://", "https://")):
             url = "http://" + url
         current_browser = self.tabs.currentWidget()
-        if current_browser:
+        if isinstance(current_browser, QWebEngineView):
             current_browser.setUrl(QUrl(url))
 
     def update_url_bar(self, q):
-        current_browser = self.sender()
-        if current_browser == self.tabs.currentWidget() and self.url_bar:
+        current_browser = self.sender()  # Get the browser that emitted the signal
+        if current_browser == self.tabs.currentWidget():  # Only update if it's the active tab
             self.url_bar.setText(q.toString())
-            self.tabs.setTabText(self.tabs.currentIndex(), current_browser.page().title()[:15])
+            self.tabs.setTabText(self.tabs.currentIndex(), current_browser.page().title())
 
     def add_new_tab(self, qurl=None, label="New Tab"):
         if qurl is None:
@@ -90,13 +85,13 @@ class Browser(QMainWindow):
         self.tabs.setCurrentIndex(i)
 
     def update_url_on_tab_switch(self, i):
-        if i >= 0:
+        if i >= 0:  # Check if index is valid
             current_browser = self.tabs.widget(i)
-            if current_browser and self.url_bar:
+            if isinstance(current_browser, QWebEngineView):
                 self.url_bar.setText(current_browser.url().toString())
 
     def close_tab(self, i):
-        if self.tabs.count() > 1:
+        if self.tabs.count() > 1:  # Only close if more than one tab exists
             self.tabs.removeTab(i)
 
 if __name__ == "__main__":
